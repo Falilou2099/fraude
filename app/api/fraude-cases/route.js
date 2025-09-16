@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import prisma from '../../lib/prisma';
+import { query } from '../../lib/mysql';
+import { v4 as uuidv4 } from 'uuid';
 
 // GET - Récupérer tous les cas de fraude
 export async function GET(request) {
@@ -12,22 +13,35 @@ export async function GET(request) {
     if (status) where.status = status;
     if (priority) where.priority = priority;
     
-    const cases = await prisma.fraudeCase.findMany({
-      where,
-      include: {
-        evidence: true,
-        comments: true,
-        _count: {
-          select: {
-            evidence: true,
-            comments: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+    let sql = `
+      SELECT 
+        fc.*,
+        COUNT(DISTINCT e.id) as evidence_count,
+        COUNT(DISTINCT c.id) as comments_count
+      FROM fraude_cases fc
+      LEFT JOIN evidence e ON fc.id = e.case_id
+      LEFT JOIN comments c ON fc.id = c.case_id
+    `;
+    
+    const params = [];
+    const conditions = [];
+    
+    if (status) {
+      conditions.push('fc.status = ?');
+      params.push(status);
+    }
+    if (priority) {
+      conditions.push('fc.priority = ?');
+      params.push(priority);
+    }
+    
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    sql += ' GROUP BY fc.id ORDER BY fc.created_at DESC';
+    
+    const cases = await query(sql, params);
     
     return NextResponse.json(cases);
   } catch (error) {
@@ -54,21 +68,27 @@ export async function POST(request) {
       );
     }
     
-    const newCase = await prisma.fraudeCase.create({
-      data: {
+    const caseId = uuidv4();
+    
+    await query(
+      `INSERT INTO fraude_cases (id, title, description, amount, status, priority, reported_by, assigned_to) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        caseId,
         title,
         description,
-        amount: amount ? parseFloat(amount) : null,
-        status: status || 'PENDING',
-        priority: priority || 'MEDIUM',
+        amount ? parseFloat(amount) : null,
+        status || 'PENDING',
+        priority || 'MEDIUM',
         reportedBy,
-        assignedTo: assignedTo || null
-      },
-      include: {
-        evidence: true,
-        comments: true
-      }
-    });
+        assignedTo || null
+      ]
+    );
+    
+    const [newCase] = await query(
+      'SELECT * FROM fraude_cases WHERE id = ?',
+      [caseId]
+    );
     
     return NextResponse.json(newCase, { status: 201 });
   } catch (error) {

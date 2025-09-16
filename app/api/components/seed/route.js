@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import prisma from '../../../lib/prisma';
+import { query } from '../../../lib/mysql';
+import { v4 as uuidv4 } from 'uuid';
 
 // POST - Ajouter des composants d'exemple
 export async function POST() {
@@ -179,20 +180,31 @@ export async function POST() {
     ];
 
     // Supprimer les composants existants (optionnel)
-    await prisma.component.deleteMany({
-      where: {
-        createdBy: 'system'
-      }
-    });
+    await query(
+      'DELETE FROM components WHERE created_by = ?',
+      ['system']
+    );
 
     // Créer les nouveaux composants
-    const createdComponents = await prisma.component.createMany({
-      data: sampleComponents
-    });
+    let createdCount = 0;
+    for (const component of sampleComponents) {
+      await query(
+        'INSERT INTO components (name, description, code, category, tags, created_by) VALUES (?, ?, ?, ?, ?, ?)',
+        [
+          component.name,
+          component.description,
+          component.code,
+          component.category,
+          component.tags.join(','),
+          component.createdBy
+        ]
+      );
+      createdCount++;
+    }
 
     return NextResponse.json({
-      message: `${createdComponents.count} composants d'exemple créés avec succès`,
-      count: createdComponents.count
+      message: `${createdCount} composants d'exemple créés avec succès`,
+      count: createdCount
     });
 
   } catch (error) {

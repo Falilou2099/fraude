@@ -1,15 +1,15 @@
-# React Component Library - Bibliothèque de Composants Personnalisée
+# Système de Détection de Fraude
 
-Une application web moderne construite avec Next.js pour organiser, gérer et réutiliser vos composants React favoris. Cette bibliothèque offre un éditeur de code intégré avec prévisualisation en temps réel et une base de données PostgreSQL via Prisma.
+Une application web moderne construite avec Next.js pour la gestion et le suivi des cas de fraude. Cette application offre un système complet de gestion des cas, des preuves et des commentaires avec une base de données MySQL directe.
 
 ## 🚀 Fonctionnalités
 
-- **Bibliothèque de composants** : Sauvegarder et organiser vos composants React favoris
-- **Éditeur intégré** : Monaco Editor avec coloration syntaxique avancée
-- **Prévisualisation temps réel** : Voir vos composants en action instantanément
-- **Support multi-langages** : JavaScript/React, HTML, CSS
+- **Gestion des cas de fraude** : Créer, modifier et suivre les cas de fraude
+- **Système de preuves** : Télécharger et gérer les documents, images et autres preuves
+- **Commentaires** : Ajouter des commentaires et notes sur chaque cas
+- **Statuts et priorités** : Organiser les cas par statut (PENDING, INVESTIGATING, RESOLVED, REJECTED) et priorité
 - **Interface moderne** : Design élégant avec mode sombre/clair
-- **Base de données** : Stockage persistant avec PostgreSQL et Prisma ORM
+- **Base de données MySQL** : Stockage persistant avec connexion MySQL directe
 - **Authentification** : Système de connexion sécurisé
 - **Responsive** : Interface adaptative pour tous les appareils
 
@@ -18,7 +18,7 @@ Une application web moderne construite avec Next.js pour organiser, gérer et r�
 - **Frontend** : Next.js 15, React 19, Tailwind CSS
 - **Éditeur** : Monaco Editor (VS Code)
 - **Backend** : Next.js API Routes
-- **Base de données** : PostgreSQL avec Prisma ORM
+- **Base de données** : MySQL avec connexion directe (mysql2)
 - **Authentification** : bcryptjs, cookies sécurisés
 - **UI** : Composants personnalisés, mode sombre/clair
 
@@ -26,6 +26,7 @@ Une application web moderne construite avec Next.js pour organiser, gérer et r�
 
 - Node.js 18+ 
 - npm ou yarn
+- MySQL 8.0+ (serveur local ou distant)
 
 ## 🔧 Installation
 
@@ -44,21 +45,24 @@ npm install
 # Copier le fichier d'exemple
 cp env.example .env
 
-# Modifier .env avec vos vraies valeurs
-# DATABASE_URL pour PostgreSQL
-# SESSION_SECRET pour la sécurité
+# Modifier .env avec vos vraies valeurs MySQL
+# DB_HOST=localhost
+# DB_USER=votre_utilisateur
+# DB_PASSWORD=votre_mot_de_passe
+# DB_NAME=fraude_detection
+# DB_PORT=3306
 ```
 
-4. **Configurer la base de données** :
+4. **Configurer la base de données MySQL** :
 ```bash
-# Générer le client Prisma
-npm run db:generate
+# Installer les dépendances
+npm install
 
-# Migrer la base de données
-npm run db:push
+# Configurer la base de données MySQL
+npm run db:setup
 
-# Initialiser avec des composants d'exemple
-curl -X POST http://localhost:3000/api/components/init
+# Initialiser avec des composants d'exemple (optionnel)
+curl -X POST http://localhost:3000/api/components/seed
 ```
 
 ## 🚀 Démarrage
@@ -73,11 +77,12 @@ Ouvrir [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 ## 📁 Structure du Projet
 
 ```
-react-component-library/
+fraude-detection/
 ├── app/
 │   ├── api/
 │   │   ├── auth/                  # Authentification
-│   │   └── components/            # API Routes CRUD composants
+│   │   ├── components/            # API Routes CRUD composants
+│   │   └── fraude-cases/          # API Routes gestion cas de fraude
 │   ├── components/
 │   │   ├── ui/                    # Composants UI réutilisables
 │   │   ├── editor/                # Éditeur Monaco
@@ -88,13 +93,13 @@ react-component-library/
 │   ├── editor/                    # Pages éditeur
 │   ├── login/                     # Page de connexion
 │   ├── lib/
-│   │   └── prisma.js              # Configuration Prisma
+│   │   └── mysql.js               # Configuration MySQL
 │   ├── globals.css                # Styles globaux
 │   ├── layout.js                  # Layout principal
 │   └── page.js                    # Page d'accueil
-├── prisma/
-│   └── schema.prisma              # Schéma de base de données
 ├── scripts/
+│   ├── setup-mysql.js             # Configuration base de données
+│   ├── migrate-to-rds.sh          # Migration RDS (production)
 │   └── deploy.sh                  # Script de déploiement
 ├── package.json
 └── README.md
@@ -102,19 +107,52 @@ react-component-library/
 
 ## 🗄️ Modèle de Données
 
-### Component
+### FraudeCase (fraude_cases)
+- `id` : Identifiant unique (UUID)
+- `title` : Titre du cas
+- `description` : Description détaillée
+- `amount` : Montant impliqué (optionnel)
+- `status` : Statut (PENDING, INVESTIGATING, RESOLVED, REJECTED)
+- `priority` : Priorité (LOW, MEDIUM, HIGH, CRITICAL)
+- `reported_by` : Nom du rapporteur
+- `assigned_to` : Personne assignée (optionnel)
+- `created_at` / `updated_at` : Horodatage
+
+### Evidence (evidence)
+- `id` : Identifiant unique (UUID)
+- `type` : Type de preuve (DOCUMENT, IMAGE, VIDEO, AUDIO, OTHER)
+- `filename` : Nom du fichier
+- `filepath` : Chemin du fichier
+- `description` : Description de la preuve
+- `uploaded_by` : Utilisateur qui a téléchargé
+- `case_id` : Référence vers le cas de fraude
+- `created_at` : Date de création
+
+### Comment (comments)
+- `id` : Identifiant unique (UUID)
+- `content` : Contenu du commentaire
+- `author` : Auteur du commentaire
+- `case_id` : Référence vers le cas de fraude
+- `created_at` : Date de création
+
+### Component (components)
 - `id` : Identifiant unique
 - `name` : Nom du composant
 - `description` : Description du composant
 - `code` : Code source du composant
 - `language` : Langage (javascript, html, css)
-- `createdAt` / `updatedAt` : Horodatage
+- `category` : Catégorie du composant
+- `tags` : Tags associés
+- `created_by` : Créateur
+- `created_at` / `updated_at` : Horodatage
 
-### User
+### User (users)
 - `id` : Identifiant unique
 - `username` : Nom d'utilisateur
 - `password` : Mot de passe hashé
-- `createdAt` / `updatedAt` : Horodatage
+- `email` : Email (optionnel)
+- `role` : Rôle utilisateur
+- `created_at` / `updated_at` : Horodatage
 
 ## 🎨 Composants Réutilisables
 
@@ -129,35 +167,44 @@ L'application inclut une bibliothèque de composants UI réutilisables :
 
 ## 🔌 API Endpoints
 
+### Cas de Fraude
+- `GET /api/fraude-cases` : Récupérer tous les cas (avec filtres status/priority)
+- `POST /api/fraude-cases` : Créer un nouveau cas de fraude
+- `GET /api/fraude-cases/[id]` : Récupérer un cas spécifique avec preuves et commentaires
+- `PUT /api/fraude-cases/[id]` : Mettre à jour un cas
+- `DELETE /api/fraude-cases/[id]` : Supprimer un cas
+
 ### Composants
 - `GET /api/components` : Récupérer tous les composants (avec filtres)
 - `POST /api/components` : Créer un nouveau composant
 - `GET /api/components/[id]` : Récupérer un composant spécifique
 - `PUT /api/components/[id]` : Mettre à jour un composant
 - `DELETE /api/components/[id]` : Supprimer un composant
-- `POST /api/components/init` : Initialiser avec des exemples
+- `POST /api/components/seed` : Initialiser avec des exemples
 
 ### Authentification
 - `POST /api/auth/login` : Connexion utilisateur
 - `POST /api/auth/logout` : Déconnexion utilisateur
+- `PUT /api/auth/update-profile` : Mettre à jour le profil utilisateur
 ## 🎯 Utilisation
 
 ### 1. Connexion
 - Utilisez les comptes de test ou créez le vôtre
 - Redirection automatique vers le dashboard
 
-### 2. Créer un Composant
+### 2. Gérer les Cas de Fraude
+- Créez un nouveau cas avec titre, description, montant
+- Assignez un statut (PENDING, INVESTIGATING, RESOLVED, REJECTED)
+- Définissez une priorité (LOW, MEDIUM, HIGH, CRITICAL)
+- Ajoutez des preuves (documents, images, etc.)
+- Suivez l'évolution avec des commentaires
+
+### 3. Créer un Composant
 - Cliquez sur "Nouveau Composant" dans le dashboard
 - Choisissez le langage (JavaScript/React, HTML, CSS)
 - Écrivez votre code dans l'éditeur Monaco
 - Visualisez le résultat en temps réel dans l'aperçu
 - Sauvegardez avec un nom et une description
-
-### 3. Éditer un Composant
-- Cliquez sur "Éditer" depuis le dashboard
-- Modifiez le code dans l'éditeur
-- L'aperçu se met à jour automatiquement
-- Sauvegardez vos modifications
 
 ### 4. Réutiliser du Code
 - Utilisez le bouton "📋" pour copier le code
@@ -166,12 +213,19 @@ L'application inclut une bibliothèque de composants UI réutilisables :
 ## 🔧 Configuration
 
 ### Variables d'Environnement
-Aucune variable d'environnement requise pour le développement local.
+Variables MySQL requises dans le fichier `.env` :
+```
+DB_HOST=localhost
+DB_USER=votre_utilisateur_mysql
+DB_PASSWORD=votre_mot_de_passe_mysql
+DB_NAME=fraude_detection
+DB_PORT=3306
+```
 
 ### Personnalisation
 - **Thèmes** : Modifiez `app/context/ThemeContext.js`
 - **Authentification** : Adaptez les routes dans `app/api/auth/`
-- **Base de données** : Configuration dans `prisma/schema.prisma`
+- **Base de données** : Configuration dans `app/lib/mysql.js` et `scripts/setup-mysql.js`
 - **Éditeur** : Personnalisez Monaco Editor dans `app/components/editor/`
 
 ## 🚀 Déploiement

@@ -9,7 +9,7 @@ const dbConfig = {
   port: process.env.DB_PORT || 3306
 };
 
-const dbName = process.env.DB_NAME || 'component_library';
+const dbName = process.env.DB_NAME || 'fraude_detection';
 
 async function setupDatabase() {
   let connection;
@@ -53,6 +53,52 @@ async function setupDatabase() {
         created_by VARCHAR(50) DEFAULT 'system',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Créer la table fraude_cases
+    console.log('🔍 Création de la table fraude_cases...');
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS fraude_cases (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        amount DECIMAL(15,2),
+        status VARCHAR(20) DEFAULT 'PENDING',
+        priority VARCHAR(20) DEFAULT 'MEDIUM',
+        reported_by VARCHAR(100) NOT NULL,
+        assigned_to VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Créer la table evidence
+    console.log('📄 Création de la table evidence...');
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS evidence (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        type VARCHAR(50) NOT NULL,
+        filename VARCHAR(255) NOT NULL,
+        filepath VARCHAR(500) NOT NULL,
+        description TEXT,
+        uploaded_by VARCHAR(100) NOT NULL,
+        case_id VARCHAR(36) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (case_id) REFERENCES fraude_cases(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Créer la table comments
+    console.log('💬 Création de la table comments...');
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+        content TEXT NOT NULL,
+        author VARCHAR(100) NOT NULL,
+        case_id VARCHAR(36) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (case_id) REFERENCES fraude_cases(id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     

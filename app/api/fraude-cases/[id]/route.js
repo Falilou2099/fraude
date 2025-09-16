@@ -1,22 +1,15 @@
 import { NextResponse } from 'next/server';
-import prisma from '../../../lib/prisma';
+import { query } from '../../../lib/mysql';
 
 // GET - Récupérer un cas spécifique
 export async function GET(request, { params }) {
   try {
     const { id } = params;
     
-    const fraudeCase = await prisma.fraudeCase.findUnique({
-      where: { id },
-      include: {
-        evidence: {
-          orderBy: { createdAt: 'desc' }
-        },
-        comments: {
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    });
+    const [fraudeCase] = await query(
+      'SELECT * FROM fraude_cases WHERE id = ?',
+      [id]
+    );
     
     if (!fraudeCase) {
       return NextResponse.json(
@@ -24,6 +17,19 @@ export async function GET(request, { params }) {
         { status: 404 }
       );
     }
+
+    const evidence = await query(
+      'SELECT * FROM evidence WHERE case_id = ? ORDER BY created_at DESC',
+      [id]
+    );
+    
+    const comments = await query(
+      'SELECT * FROM comments WHERE case_id = ? ORDER BY created_at DESC',
+      [id]
+    );
+    
+    fraudeCase.evidence = evidence;
+    fraudeCase.comments = comments;
     
     return NextResponse.json(fraudeCase);
   } catch (error) {
@@ -44,9 +50,10 @@ export async function PUT(request, { params }) {
     const { title, description, amount, status, priority, reportedBy, assignedTo } = body;
     
     // Vérifier si le cas existe
-    const existingCase = await prisma.fraudeCase.findUnique({
-      where: { id }
-    });
+    const [existingCase] = await query(
+      'SELECT * FROM fraude_cases WHERE id = ?',
+      [id]
+    );
     
     if (!existingCase) {
       return NextResponse.json(
@@ -55,22 +62,40 @@ export async function PUT(request, { params }) {
       );
     }
     
-    const updatedCase = await prisma.fraudeCase.update({
-      where: { id },
-      data: {
+    await query(
+      `UPDATE fraude_cases SET 
+       title = ?, description = ?, amount = ?, status = ?, priority = ?, 
+       reported_by = ?, assigned_to = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
         title,
         description,
-        amount: amount ? parseFloat(amount) : null,
+        amount ? parseFloat(amount) : null,
         status,
         priority,
         reportedBy,
-        assignedTo: assignedTo || null
-      },
-      include: {
-        evidence: true,
-        comments: true
-      }
-    });
+        assignedTo || null,
+        id
+      ]
+    );
+    
+    const [updatedCase] = await query(
+      'SELECT * FROM fraude_cases WHERE id = ?',
+      [id]
+    );
+    
+    const evidence = await query(
+      'SELECT * FROM evidence WHERE case_id = ?',
+      [id]
+    );
+    
+    const comments = await query(
+      'SELECT * FROM comments WHERE case_id = ?',
+      [id]
+    );
+    
+    updatedCase.evidence = evidence;
+    updatedCase.comments = comments;
     
     return NextResponse.json(updatedCase);
   } catch (error) {
@@ -88,9 +113,10 @@ export async function DELETE(request, { params }) {
     const { id } = params;
     
     // Vérifier si le cas existe
-    const existingCase = await prisma.fraudeCase.findUnique({
-      where: { id }
-    });
+    const [existingCase] = await query(
+      'SELECT * FROM fraude_cases WHERE id = ?',
+      [id]
+    );
     
     if (!existingCase) {
       return NextResponse.json(
@@ -99,9 +125,10 @@ export async function DELETE(request, { params }) {
       );
     }
     
-    await prisma.fraudeCase.delete({
-      where: { id }
-    });
+    await query(
+      'DELETE FROM fraude_cases WHERE id = ?',
+      [id]
+    );
     
     return NextResponse.json({ message: 'Cas supprimé avec succès' });
   } catch (error) {
