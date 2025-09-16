@@ -8,3 +8,10 @@ module.exports = {
       ignoreDuringBuilds: true,
     },
   }
+  cat > next.config.js <<'JS'
+module.exports = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+}
+JS
