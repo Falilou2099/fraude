@@ -2,6 +2,8 @@
 
 Une application web moderne construite avec Next.js pour la gestion et le suivi des cas de fraude. Cette application offre un système complet de gestion des cas, des preuves et des commentaires avec une base de données MySQL directe.
 
+<img width="1919" height="967" alt="image" src="https://github.com/user-attachments/assets/a06b896a-bd2d-40d7-87fc-23f347028f0b" />
+
 ## 🚀 Fonctionnalités
 
 - **Gestion des cas de fraude** : Créer, modifier et suivre les cas de fraude
