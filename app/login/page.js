@@ -4,23 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { setSession } from '../lib/session';
 
-export default function LoginPage() {
-  const [credentials, setCredentials] = useState({
+export default function Login() {
+  const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCredentials(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    setError('');
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,13 +24,13 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setSession(data.user);
+        await setSession(data.user);
         router.push('/dashboard');
       } else {
         setError(data.error || 'Erreur de connexion');
@@ -51,26 +42,35 @@ export default function LoginPage() {
     }
   };
 
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {/* Logo */}
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">C</span>
+          <div className="mx-auto h-16 w-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center mb-6">
+            <span className="text-white font-bold text-2xl">C</span>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
-            Component Dashboard
+          <h2 className="text-3xl font-bold text-white mb-2">
+            Components Library
           </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Connectez-vous pour accéder à vos composants
+          <p className="text-gray-400">
+            Accédez à votre bibliothèque de composants
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        {/* Login Form */}
+        <div className="card-modern">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
                   Nom d'utilisateur
                 </label>
                 <input
@@ -78,15 +78,15 @@ export default function LoginPage() {
                   name="username"
                   type="text"
                   required
-                  value={credentials.username}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="input-modern w-full"
                   placeholder="Entrez votre nom d'utilisateur"
+                  value={formData.username}
+                  onChange={handleChange}
                 />
               </div>
-
+              
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                   Mot de passe
                 </label>
                 <input
@@ -94,38 +94,63 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
-                  value={credentials.password}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="input-modern w-full"
                   placeholder="Entrez votre mot de passe"
+                  value={formData.password}
+                  onChange={handleChange}
                 />
               </div>
+            </div>
 
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                <p className="text-red-400 text-sm text-center">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary w-full py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Connexion...</span>
                 </div>
+              ) : (
+                'Se connecter'
               )}
+            </button>
+          </form>
 
+          {/* Test Accounts */}
+          <div className="mt-6 pt-6 border-t border-gray-700">
+            <p className="text-center text-sm text-gray-400 mb-3">
+              Comptes de démonstration
+            </p>
+            <div className="grid grid-cols-2 gap-3">
               <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                onClick={() => setFormData({ username: 'admin', password: 'admin123' })}
+                className="btn-secondary text-xs py-2"
               >
-                {isLoading ? 'Connexion...' : 'Se connecter'}
+                👤 Admin
+              </button>
+              <button
+                onClick={() => setFormData({ username: 'user', password: 'user123' })}
+                className="btn-secondary text-xs py-2"
+              >
+                👥 Utilisateur
               </button>
             </div>
           </div>
-        </form>
+        </div>
 
+        {/* Footer */}
         <div className="text-center">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Comptes de démonstration :</p>
-            <div className="text-xs text-gray-500 dark:text-gray-500 space-y-1">
-              <div>admin / admin123</div>
-              <div>user / user123</div>
-            </div>
-          </div>
+          <p className="text-xs text-gray-500">
+            Bibliothèque moderne de composants React
+          </p>
         </div>
       </div>
     </div>

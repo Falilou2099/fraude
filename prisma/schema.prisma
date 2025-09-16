@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -65,7 +65,7 @@ model Component {
   code        String
   language    String   @default("javascript")
   category    String   @default("UI")
-  tags        String[]
+  tags        String   @default("")
   createdBy   String   @default("system")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

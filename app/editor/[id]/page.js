@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getSession } from '../../lib/session';
 import { useTheme } from '../../context/ThemeContext';
+import { CodeDetector } from '../../lib/codeDetector';
+import { CodeCompiler } from '../../lib/codeCompiler';
 import Editor from '@monaco-editor/react';
 
 export default function ComponentEditor() {
@@ -16,20 +18,52 @@ export default function ComponentEditor() {
   const [language, setLanguage] = useState('javascript');
   const [isLoading, setIsLoading] = useState(true);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [previewContent, setPreviewContent] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveForm, setSaveForm] = useState({ name: '', description: '', category_id: null });
+  const [categories, setCategories] = useState([]);
+  const [previewMode, setPreviewMode] = useState('desktop');
+  const [detectedCodeType, setDetectedCodeType] = useState(null);
+  const [autoDetectEnabled, setAutoDetectEnabled] = useState(true);
   const previewRef = useRef(null);
+  
+  const isNewComponent = params.id === 'new';
 
-  const [saveForm, setSaveForm] = useState({
-    name: '',
-    description: ''
-  });
+  // Fonction pour obtenir la taille de prévisualisation selon le mode
+  const getPreviewSize = () => {
+    switch (previewMode) {
+      case 'mobile':
+        return 'w-80 h-96';
+      case 'tablet':
+        return 'w-96 h-[500px]';
+      case 'desktop':
+      default:
+        return 'w-full h-full';
+    }
+  };
 
   const languages = [
-    { value: 'javascript', label: 'React/JavaScript' },
+    { value: 'javascript', label: 'JavaScript/React' },
+    { value: 'typescript', label: 'TypeScript' },
     { value: 'html', label: 'HTML' },
-    { value: 'css', label: 'CSS' }
+    { value: 'css', label: 'CSS/SCSS' },
+    { value: 'vue', label: 'Vue.js' },
+    { value: 'angular', label: 'Angular' },
+    { value: 'svelte', label: 'Svelte' }
   ];
+
+  // Auto-détection du type de code
+  const detectAndUpdateCodeType = (newCode) => {
+    if (autoDetectEnabled && newCode.trim()) {
+      const detected = CodeDetector.detectCodeType(newCode);
+      setDetectedCodeType(detected);
+      
+      // Mettre à jour le langage si différent
+      if (detected.language !== language) {
+        setLanguage(detected.language);
+      }
+    }
+  };
 
   useEffect(() => {
     const session = getSession();
@@ -39,17 +73,235 @@ export default function ComponentEditor() {
     }
     setUser(session);
     
+    // Charger les catégories
+    loadCategories();
+    
     if (params.id !== 'new') {
-      loadComponent();
+      loadExistingComponent();
     } else {
       setIsLoading(false);
-      setCode(getDefaultCode('javascript'));
+      const defaultCode = `function MyComponent() {
+  return (
+    <div className="p-4 bg-blue-50 rounded-lg">
+      <h2 className="text-xl font-bold text-blue-800 mb-2">Mon Composant React</h2>
+      <p className="text-blue-600">Ceci est un exemple de composant React.</p>
+    </div>
+  );
+}`;
+      setCode(defaultCode);
+      detectAndUpdateCodeType(defaultCode);
     }
   }, [params.id, router]);
 
+  const loadExistingComponent = async () => {
+    try {
+      const response = await fetch(`/api/components/${params.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setComponent(data);
+        setCode(data.code);
+        setLanguage(data.language || 'javascript');
+        setSaveForm({
+          name: data.name,
+          description: data.description || '',
+          category_id: data.category_id || null
+        });
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      router.push('/dashboard');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des catégories:', error);
+    }
+  };
+
+  // Fonction pour mettre à jour la prévisualisation avec auto-détection
+  const updatePreview = async () => {
+    if (!previewRef.current) return;
+    
+    const iframe = previewRef.current;
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    
+    try {
+      // Utiliser le système de compilation intelligent
+      const codeType = detectedCodeType || CodeDetector.detectCodeType(code);
+      const compiledContent = await CodeCompiler.compileCode(code, codeType);
+      
+      doc.open();
+      doc.write(compiledContent);
+      doc.close();
+    } catch (error) {
+      console.error('Erreur de compilation:', error);
+      const errorContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Erreur de compilation</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="bg-gray-50 p-4">
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <strong>Erreur de compilation:</strong> ${error.message}
+            <br><small>Vérifiez votre code et réessayez.</small>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      doc.open();
+      doc.write(errorContent);
+      doc.close();
+    }
+  };
+
+  // Ancienne fonction de prévisualisation (fallback)
+  const updatePreviewLegacy = () => {
+    if (!previewRef.current) return;
+    
+    const iframe = previewRef.current;
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    
+    let content = '';
+    
+    if (language === 'html') {
+      content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Preview</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="p-4">
+          ${code}
+        </body>
+        </html>
+      `;
+    } else if (language === 'css') {
+      content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Preview</title>
+          <style>${code}</style>
+        </head>
+        <body class="p-4">
+          <div class="my-component">
+            <h2>Aperçu CSS</h2>
+            <p>Votre CSS est appliqué à cet élément</p>
+          </div>
+        </body>
+        </html>
+      `;
+    } else if (language === 'javascript') {
+      // Pour JavaScript/React, essayer de rendre le composant
+      content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Preview</title>
+          <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+          <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+          <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { font-family: 'Inter', sans-serif; margin: 0; padding: 16px; }
+            .error { color: #ef4444; background: #fef2f2; padding: 12px; border-radius: 8px; border: 1px solid #fecaca; }
+          </style>
+        </head>
+        <body>
+          <div id="root"></div>
+          <script type="text/babel">
+            try {
+              ${code}
+              
+              // Essayer de rendre le composant par défaut
+              const componentName = code.match(/export\\s+default\\s+function\\s+(\\w+)/)?.[1] || 
+                                   code.match(/const\\s+(\\w+)\\s*=.*=>/)?.[1] ||
+                                   'Component';
+              
+              if (typeof window[componentName] !== 'undefined') {
+                ReactDOM.render(React.createElement(window[componentName]), document.getElementById('root'));
+              } else if (typeof eval(componentName) !== 'undefined') {
+                ReactDOM.render(React.createElement(eval(componentName)), document.getElementById('root'));
+              } else {
+                // Essayer d'exécuter le code directement
+                const Component = eval('(' + code.replace(/export\\s+default\\s+/, '') + ')');
+                ReactDOM.render(React.createElement(Component), document.getElementById('root'));
+              }
+            } catch (error) {
+              document.getElementById('root').innerHTML = 
+                '<div class="error"><strong>Erreur de compilation:</strong><br>' + error.message + '</div>';
+            }
+          </script>
+        </body>
+        </html>
+      `;
+    } else {
+      // Affichage formaté pour autres langages
+      content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Preview</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { font-family: 'Monaco', 'Menlo', monospace; }
+            .code-preview { 
+              background: #f8f9fa; 
+              padding: 1rem; 
+              border-radius: 8px; 
+              border-left: 4px solid #3b82f6;
+              white-space: pre-wrap;
+              font-size: 14px;
+              line-height: 1.5;
+            }
+          </style>
+        </head>
+        <body class="p-4">
+          <div class="mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">Aperçu du Code ${language.toUpperCase()}</h3>
+            <div class="code-preview">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          </div>
+        </body>
+        </html>
+      `;
+    }
+    
+    doc.open();
+    doc.write(content);
+    doc.close();
+  };
+
   useEffect(() => {
-    updatePreview();
-  }, [code, language]);
+    const timer = setTimeout(() => {
+      updatePreview();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [code, language, detectedCodeType]);
 
   const getDefaultCode = (lang) => {
     const defaults = {
@@ -114,32 +366,14 @@ export default function ComponentEditor() {
     return defaults[lang] || defaults.javascript;
   };
 
-  const loadComponent = async () => {
-    try {
-      const response = await fetch(`/api/components/${params.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setComponent(data);
-        setCode(data.code);
-        setLanguage(data.language || 'javascript');
-        setSaveForm({
-          name: data.name,
-          description: data.description || ''
-        });
-      } else {
-        router.push('/dashboard');
-      }
-    } catch (error) {
-      console.error('Erreur:', error);
-      router.push('/dashboard');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleCodeChange = (value) => {
-    setCode(value || '');
+    const newCode = value || '';
+    setCode(newCode);
     setHasUnsavedChanges(true);
+    
+    // Auto-détection du type de code
+    detectAndUpdateCodeType(newCode);
   };
 
   const handleLanguageChange = (e) => {
@@ -166,6 +400,7 @@ export default function ComponentEditor() {
           description: saveForm.description,
           code,
           language,
+          category_id: saveForm.category_id,
           createdBy: user.username
         })
       });
@@ -309,15 +544,35 @@ export default function ComponentEditor() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <select
-                value={language}
-                onChange={handleLanguageChange}
-                className="border border-gray-300 dark:border-gray-600 rounded px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="javascript">JavaScript/React</option>
-                <option value="html">HTML</option>
-                <option value="css">CSS</option>
-              </select>
+              <div className="flex items-center space-x-2">
+                <select
+                  value={language}
+                  onChange={handleLanguageChange}
+                  className="border border-gray-300 dark:border-gray-600 rounded px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  {languages.map(lang => (
+                    <option key={lang.value} value={lang.value}>{lang.label}</option>
+                  ))}
+                </select>
+                
+                <button
+                  onClick={() => setAutoDetectEnabled(!autoDetectEnabled)}
+                  className={`px-2 py-1 text-xs rounded ${
+                    autoDetectEnabled 
+                      ? 'bg-green-100 text-green-800 border border-green-300' 
+                      : 'bg-gray-100 text-gray-600 border border-gray-300'
+                  }`}
+                  title="Auto-détection du langage"
+                >
+                  🔍 Auto
+                </button>
+                
+                {detectedCodeType && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Détecté: {detectedCodeType.framework} ({detectedCodeType.dialect})
+                  </div>
+                )}
+              </div>
               
               <button
                 onClick={() => setShowSaveModal(true)}
@@ -334,13 +589,13 @@ export default function ComponentEditor() {
       {/* Editor Layout */}
       <div className="flex h-[calc(100vh-80px)]">
         {/* Code Editor */}
-        <div className="w-1/2 border-r border-gray-300 dark:border-gray-600">
+        <div className="w-1/2 border-r border-gray-700">
           <Editor
             height="100%"
             language={language === 'javascript' ? 'javascript' : language}
             value={code}
             onChange={handleCodeChange}
-            theme={theme === 'dark' ? 'vs-dark' : 'light'}
+            theme={isDark ? 'vs-dark' : 'light'}
             options={{
               minimap: { enabled: false },
               fontSize: 14,
@@ -354,16 +609,65 @@ export default function ComponentEditor() {
         </div>
 
         {/* Preview */}
-        <div className="w-1/2 bg-white dark:bg-gray-800">
-          <div className="h-full">
-            <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-300 dark:border-gray-600">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Aperçu en temps réel</h3>
+        <div className="w-1/2 bg-gray-900">
+          <div className="h-full flex flex-col">
+            <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Aperçu:</span>
+                  <button
+                    onClick={() => setPreviewMode('desktop')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      previewMode === 'desktop' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    🖥️ Desktop
+                  </button>
+                  <button
+                    onClick={() => setPreviewMode('tablet')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      previewMode === 'tablet' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    📱 Tablet
+                  </button>
+                  <button
+                    onClick={() => setPreviewMode('mobile')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      previewMode === 'mobile' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    📱 Mobile
+                  </button>
+                </div>
+                
+                <button
+                  onClick={updatePreview}
+                  className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
+                  title="Recompiler le code"
+                >
+                  🔄 Recompiler
+                </button>
+              </div>
+              <h3 className="text-lg font-medium text-white">
+                Prévisualisation
+              </h3>
             </div>
-            <iframe
-              srcDoc={generatePreview()}
-              className="w-full h-[calc(100%-40px)] border-0"
-              sandbox="allow-scripts"
-            />
+            <div className="flex-1 p-4 flex justify-center items-start">
+              <div className={`${getPreviewSize()} transition-all duration-300 border border-gray-600 rounded-lg overflow-hidden`}>
+                <iframe
+                  ref={previewRef}
+                  className="w-full h-full"
+                  title="Preview"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -401,6 +705,24 @@ export default function ComponentEditor() {
                   rows={3}
                   placeholder="Description du composant"
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Catégorie
+                </label>
+                <select
+                  value={saveForm.category_id || ''}
+                  onChange={(e) => setSaveForm({ ...saveForm, category_id: e.target.value || null })}
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Aucune catégorie</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             

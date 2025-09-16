@@ -2,6 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #0f0f23;
+  --bg-secondary: #1a1a2e;
+  --bg-sidebar: #16213e;
+  --purple-primary: #6B46C1;
+  --purple-secondary: #8B5CF6;
+  --blue-primary: #3B82F6;
+  --green-success: #10B981;
+  --red-error: #EF4444;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --border-color: #374151;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+.gradient-card {
+  background: linear-gradient(135deg, var(--purple-primary) 0%, var(--blue-primary) 100%);
+}
+
+.gradient-purple {
+  background: linear-gradient(135deg, #6B46C1 0%, #8B5CF6 100%);
+}
+
+.gradient-blue {
+  background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+}
+
+.sidebar-item {
+  @apply flex items-center px-6 py-3 text-gray-300 hover:text-white hover:bg-purple-600/20 transition-all duration-200 cursor-pointer;
+}
+
+.sidebar-item.active {
+  @apply text-white bg-purple-600/30 border-r-2 border-purple-400;
+}
+
+.card-modern {
+  @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 hover:border-purple-500/30 transition-all duration-300;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-purple-500/25;
+}
+
+.btn-secondary {
+  @apply bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200;
+}
+
+.input-modern {
+  @apply bg-gray-800/50 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all duration-200;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

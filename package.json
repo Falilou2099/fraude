@@ -7,20 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "deploy": "npm run build && npm run db:migrate"
+    "db:setup": "node scripts/setup-mysql.js",
+    "deploy": "npm run build"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
-    "@prisma/client": "^6.16.1",
     "bcryptjs": "^2.4.3",
     "js-cookie": "^3.0.5",
+    "mysql2": "^3.14.5",
     "next": "15.5.3",
-    "pg": "^8.16.3",
-    "prisma": "^6.16.1",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

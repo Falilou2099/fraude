@@ -6,7 +6,7 @@ export const setSession = (user) => {
   const sessionData = {
     id: user.id,
     username: user.username,
-    name: user.name,
+    createdAt: user.createdAt,
     loginTime: new Date().toISOString()
   };
   
