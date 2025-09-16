@@ -1,6 +1,9 @@
 # React Component Library - Bibliothèque de Composants Personnalisée
 
-Une application web moderne construite avec Next.js pour organiser, gérer et réutiliser vos composants React favoris. Cette bibliothèque offre un éditeur de code intégré avec prévisualisation en temps réel et une base de données PostgreSQL via Prisma.
+Une application web moderne construite avec Next.js pour organiser, gérer et réutiliser vos composants React favoris. Cette bibliothèque offre un éditeur de code intégré avec prévisualisation en temps réel et une base de données MySql
+<img width="1919" height="967" alt="image" src="https://github.com/user-attachments/assets/a06b896a-bd2d-40d7-87fc-23f347028f0b" />
+
+
 
 ## 🚀 Fonctionnalités
 
