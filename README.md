@@ -1,36 +1,228 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Application de Gestion des Cas de Fraude
 
-## Getting Started
+Une application web moderne construite avec Next.js pour gérer et suivre les cas de fraude au sein d'une organisation. Cette application offre une interface CRUD complète avec des composants React réutilisables et une base de données SQLite via Prisma.
 
-First, run the development server:
+## 🚀 Fonctionnalités
 
+- **Gestion CRUD complète** : Créer, lire, modifier et supprimer des cas de fraude
+- **Interface moderne** : Interface utilisateur élégante avec Tailwind CSS
+- **Composants réutilisables** : Bibliothèque de composants UI modulaires
+- **Filtrage et recherche** : Filtrer les cas par statut et priorité
+- **Base de données** : Stockage persistant avec SQLite et Prisma ORM
+- **Validation** : Validation côté client et serveur
+- **Responsive** : Interface adaptative pour tous les appareils
+
+## 🛠️ Technologies Utilisées
+
+- **Frontend** : Next.js 15, React 19, Tailwind CSS
+- **Backend** : Next.js API Routes
+- **Base de données** : SQLite avec Prisma ORM
+- **Validation** : Zod, React Hook Form
+- **UI** : Composants personnalisés, Lucide React (icônes)
+
+## 📋 Prérequis
+
+- Node.js 18+ 
+- npm ou yarn
+
+## 🔧 Installation
+
+1. **Cloner le projet** (si applicable) ou naviguer dans le dossier :
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd fraude
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Installer les dépendances** :
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+3. **Configurer la base de données** :
+```bash
+# Générer le client Prisma
+npx prisma generate
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Créer et migrer la base de données
+npx prisma db push
 
-## Learn More
+# (Optionnel) Ajouter des données de test
+npx prisma db seed
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Créer le fichier d'environnement** :
+```bash
+# Créer .env.local
+echo "DATABASE_URL=\"file:./dev.db\"" > .env.local
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🚀 Démarrage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Démarrer le serveur de développement
+npm run dev
+```
 
-## Deploy on Vercel
+Ouvrir [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📁 Structure du Projet
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+fraude/
+├── app/
+│   ├── api/
+│   │   └── fraude-cases/          # API Routes CRUD
+│   ├── components/
+│   │   ├── ui/                    # Composants UI réutilisables
+│   │   │   ├── Button.js
+│   │   │   ├── Input.js
+│   │   │   ├── Select.js
+│   │   │   ├── Modal.js
+│   │   │   ├── Table.js
+│   │   │   └── Badge.js
+│   │   ├── FraudeCaseForm.js      # Formulaire de cas
+│   │   └── FraudeCaseList.js      # Liste des cas
+│   ├── lib/
+│   │   └── prisma.js              # Configuration Prisma
+│   ├── globals.css                # Styles globaux
+│   ├── layout.js                  # Layout principal
+│   └── page.js                    # Page d'accueil
+├── prisma/
+│   └── schema.prisma              # Schéma de base de données
+├── package.json
+└── README.md
+```
+
+## 🗄️ Modèle de Données
+
+### FraudeCase
+- `id` : Identifiant unique
+- `title` : Titre du cas
+- `description` : Description détaillée
+- `amount` : Montant impliqué
+- `status` : Statut (PENDING, INVESTIGATING, RESOLVED, REJECTED)
+- `priority` : Priorité (LOW, MEDIUM, HIGH, CRITICAL)
+- `reportedBy` : Personne qui a rapporté
+- `assignedTo` : Personne assignée
+- `createdAt` / `updatedAt` : Horodatage
+
+### Evidence
+- Preuves associées aux cas de fraude
+- Support pour différents types de fichiers
+
+### Comment
+- Commentaires sur les cas de fraude
+- Suivi des discussions
+
+## 🎨 Composants Réutilisables
+
+L'application inclut une bibliothèque de composants UI réutilisables :
+
+- **Button** : Boutons avec différentes variantes et tailles
+- **Input** : Champs de saisie avec validation
+- **Select** : Listes déroulantes
+- **Modal** : Fenêtres modales
+- **Table** : Tableaux de données
+- **Badge** : Étiquettes de statut
+
+## 🔌 API Endpoints
+
+- `GET /api/fraude-cases` : Récupérer tous les cas (avec filtres)
+- `POST /api/fraude-cases` : Créer un nouveau cas
+- `GET /api/fraude-cases/[id]` : Récupérer un cas spécifique
+- `PUT /api/fraude-cases/[id]` : Mettre à jour un cas
+## 🎯 Utilisation
+
+### 1. Connexion
+- Utilisez les comptes de test ou créez le vôtre
+- Redirection automatique vers le dashboard
+
+### 2. Créer un Composant
+- Cliquez sur "Nouveau Composant" dans le dashboard
+- Choisissez le langage (JavaScript/React, HTML, CSS)
+- Écrivez votre code dans l'éditeur Monaco
+- Visualisez le résultat en temps réel dans l'aperçu
+- Sauvegardez avec un nom et une description
+
+### 3. Éditer un Composant
+- Cliquez sur "Éditer" depuis le dashboard
+- Modifiez le code dans l'éditeur
+- L'aperçu se met à jour automatiquement
+- Sauvegardez vos modifications
+
+### 4. Réutiliser du Code
+- Utilisez le bouton "📋" pour copier le code
+- Intégrez facilement dans vos projets
+
+## 🔧 Configuration
+
+### Variables d'Environnement
+Aucune variable d'environnement requise pour le développement local.
+
+### Personnalisation
+- **Thèmes** : Modifiez `app/context/ThemeContext.js`
+- **Authentification** : Adaptez `app/lib/auth.js`
+- **Stockage** : Remplacez `app/lib/data.js` par une vraie base de données
+
+## 🚀 Déploiement
+
+### Vercel (Recommandé)
+```bash
+npm run build
+# Déployez sur Vercel
+```
+
+### Autres Plateformes
+```bash
+npm run build
+npm start
+```
+
+## 🛠️ Développement
+
+### Scripts Disponibles
+```bash
+npm run dev          # Serveur de développement
+npm run build        # Build de production
+npm run start        # Serveur de production
+npm run lint         # Linting du code
+```
+
+### Ajout de Fonctionnalités
+1. **Nouveaux langages** : Étendez `generatePreview()` dans l'éditeur
+2. **Persistance** : Remplacez le stockage en mémoire par une base de données
+3. **Collaboration** : Ajoutez des fonctionnalités temps réel avec WebSocket
+
+## 📋 Fonctionnalités Futures
+
+- [ ] Base de données persistante (PostgreSQL/MongoDB)
+- [ ] Système de tags et catégories
+- [ ] Partage de composants entre utilisateurs
+- [ ] Export/Import de composants
+- [ ] Historique des versions
+- [ ] Collaboration en temps réel
+- [ ] Thèmes personnalisés pour l'éditeur
+- [ ] Intégration Git
+- [ ] Marketplace de composants
+
+## 🤝 Contribution
+
+1. Fork le projet
+2. Créez une branche feature (`git checkout -b feature/AmazingFeature`)
+3. Commit vos changements (`git commit -m 'Add AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrez une Pull Request
+
+## 📝 License
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+
+## 🙏 Remerciements
+
+- [Next.js](https://nextjs.org/) - Framework React
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - Éditeur de code
+- [Tailwind CSS](https://tailwindcss.com/) - Framework CSS
+- [Vercel](https://vercel.com/) - Plateforme de déploiement
+
+---
+
+**Développé avec ❤️ pour la communauté des développeurs**

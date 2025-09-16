@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model FraudeCase {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  amount      Float?
+  status      String   @default("PENDING") // PENDING, INVESTIGATING, RESOLVED, REJECTED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  reportedBy  String
+  assignedTo  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  evidence    Evidence[]
+  comments    Comment[]
+  
+  @@map("fraude_cases")
+}
+
+model Evidence {
+  id          String     @id @default(cuid())
+  type        String     // DOCUMENT, IMAGE, VIDEO, AUDIO, OTHER
+  filename    String
+  filepath    String
+  description String?
+  uploadedBy  String
+  createdAt   DateTime   @default(now())
+  
+  // Relations
+  caseId      String
+  case        FraudeCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  
+  @@map("evidence")
+}
+
+model Comment {
+  id        String     @id @default(cuid())
+  content   String
+  author    String
+  createdAt DateTime   @default(now())
+  
+  // Relations
+  caseId    String
+  case      FraudeCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  
+  @@map("comments")
+}
+
+model Component {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  code        String
+  language    String   @default("javascript")
+  category    String   @default("UI")
+  tags        String[]
+  createdBy   String   @default("system")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("components")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  email     String?  @unique
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
