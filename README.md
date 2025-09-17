@@ -1,15 +1,16 @@
-# Système de Détection de Fraude
+# Bibliothèque de Composants React
 
-Une application web moderne construite avec Next.js pour la gestion et le suivi des cas de fraude. Cette application offre un système complet de gestion des cas, des preuves et des commentaires avec une base de données MySQL directe.
+Une application web moderne construite avec Next.js pour organiser, gérer et réutiliser vos composants React favoris. Cette bibliothèque offre un éditeur de code intégré avec prévisualisation en temps réel et une base de données MySQL directe.
 
 <img width="1919" height="967" alt="image" src="https://github.com/user-attachments/assets/a06b896a-bd2d-40d7-87fc-23f347028f0b" />
 
 ## 🚀 Fonctionnalités
 
-- **Gestion des cas de fraude** : Créer, modifier et suivre les cas de fraude
-- **Système de preuves** : Télécharger et gérer les documents, images et autres preuves
-- **Commentaires** : Ajouter des commentaires et notes sur chaque cas
-- **Statuts et priorités** : Organiser les cas par statut (PENDING, INVESTIGATING, RESOLVED, REJECTED) et priorité
+- **Bibliothèque de composants** : Sauvegarder et organiser vos composants React favoris
+- **Éditeur intégré** : Monaco Editor avec coloration syntaxique avancée
+- **Prévisualisation temps réel** : Voir vos composants en action instantanément
+- **Support multi-langages** : JavaScript/React, HTML, CSS
+- **Catégories et tags** : Organiser vos composants par catégorie et étiquettes
 - **Interface moderne** : Design élégant avec mode sombre/clair
 - **Base de données MySQL** : Stockage persistant avec connexion MySQL directe
 - **Authentification** : Système de connexion sécurisé
@@ -79,12 +80,11 @@ Ouvrir [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 ## 📁 Structure du Projet
 
 ```
-fraude-detection/
+react-component-library/
 ├── app/
 │   ├── api/
 │   │   ├── auth/                  # Authentification
-│   │   ├── components/            # API Routes CRUD composants
-│   │   └── fraude-cases/          # API Routes gestion cas de fraude
+│   │   └── components/            # API Routes CRUD composants
 │   ├── components/
 │   │   ├── ui/                    # Composants UI réutilisables
 │   │   ├── editor/                # Éditeur Monaco
@@ -101,41 +101,12 @@ fraude-detection/
 │   └── page.js                    # Page d'accueil
 ├── scripts/
 │   ├── setup-mysql.js             # Configuration base de données
-│   ├── migrate-to-rds.sh          # Migration RDS (production)
 │   └── deploy.sh                  # Script de déploiement
 ├── package.json
 └── README.md
 ```
 
 ## 🗄️ Modèle de Données
-
-### FraudeCase (fraude_cases)
-- `id` : Identifiant unique (UUID)
-- `title` : Titre du cas
-- `description` : Description détaillée
-- `amount` : Montant impliqué (optionnel)
-- `status` : Statut (PENDING, INVESTIGATING, RESOLVED, REJECTED)
-- `priority` : Priorité (LOW, MEDIUM, HIGH, CRITICAL)
-- `reported_by` : Nom du rapporteur
-- `assigned_to` : Personne assignée (optionnel)
-- `created_at` / `updated_at` : Horodatage
-
-### Evidence (evidence)
-- `id` : Identifiant unique (UUID)
-- `type` : Type de preuve (DOCUMENT, IMAGE, VIDEO, AUDIO, OTHER)
-- `filename` : Nom du fichier
-- `filepath` : Chemin du fichier
-- `description` : Description de la preuve
-- `uploaded_by` : Utilisateur qui a téléchargé
-- `case_id` : Référence vers le cas de fraude
-- `created_at` : Date de création
-
-### Comment (comments)
-- `id` : Identifiant unique (UUID)
-- `content` : Contenu du commentaire
-- `author` : Auteur du commentaire
-- `case_id` : Référence vers le cas de fraude
-- `created_at` : Date de création
 
 ### Component (components)
 - `id` : Identifiant unique
@@ -169,13 +140,6 @@ L'application inclut une bibliothèque de composants UI réutilisables :
 
 ## 🔌 API Endpoints
 
-### Cas de Fraude
-- `GET /api/fraude-cases` : Récupérer tous les cas (avec filtres status/priority)
-- `POST /api/fraude-cases` : Créer un nouveau cas de fraude
-- `GET /api/fraude-cases/[id]` : Récupérer un cas spécifique avec preuves et commentaires
-- `PUT /api/fraude-cases/[id]` : Mettre à jour un cas
-- `DELETE /api/fraude-cases/[id]` : Supprimer un cas
-
 ### Composants
 - `GET /api/components` : Récupérer tous les composants (avec filtres)
 - `POST /api/components` : Créer un nouveau composant
@@ -194,14 +158,7 @@ L'application inclut une bibliothèque de composants UI réutilisables :
 - Utilisez les comptes de test ou créez le vôtre
 - Redirection automatique vers le dashboard
 
-### 2. Gérer les Cas de Fraude
-- Créez un nouveau cas avec titre, description, montant
-- Assignez un statut (PENDING, INVESTIGATING, RESOLVED, REJECTED)
-- Définissez une priorité (LOW, MEDIUM, HIGH, CRITICAL)
-- Ajoutez des preuves (documents, images, etc.)
-- Suivez l'évolution avec des commentaires
-
-### 3. Créer un Composant
+### 2. Créer un Composant
 - Cliquez sur "Nouveau Composant" dans le dashboard
 - Choisissez le langage (JavaScript/React, HTML, CSS)
 - Écrivez votre code dans l'éditeur Monaco
@@ -220,7 +177,7 @@ Variables MySQL requises dans le fichier `.env` :
 DB_HOST=localhost
 DB_USER=votre_utilisateur_mysql
 DB_PASSWORD=votre_mot_de_passe_mysql
-DB_NAME=fraude_detection
+DB_NAME=component_library
 DB_PORT=3306
 ```
 
